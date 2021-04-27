@@ -1,0 +1,58 @@
+---
+title: "WranglingE1"
+author: "Maxim Tingaud"
+date: "25 4 2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+if(!require(pacman)) {
+  install.packages("pacman")
+  library(pacman)
+}
+pacman::p_load(tidyr, R.matlab)
+```
+
+
+```{r}
+homepath = getwd()
+cat(homepath)
+```
+
+```{r}
+#import data
+data <- read.table("data/data.csv", sep=",", header=T)
+
+#go from wide to long and separate out var_ses
+library(tidyr) # to use gather and separate
+tidier <- data %>%
+    gather(key, value, -id, -intervention)
+tidier %>% head(8)
+
+tidy <- tidier %>%
+    separate(key, into = c("variable", "session"), sep = "_")
+tidy %>% head(8)
+
+#rename ses1 to pre etc.
+tidy$session[tidy$session == "ses1"] <- "pre"
+tidy$session[tidy$session == "ses2"] <- "post"
+
+#go from long to wide to standardize
+library(reshape2) #to use dcast
+forged <- dcast(tidy, id + intervention + session ~ variable)
+
+#remove NA before scaling and make intervention a factor
+forged <- na.omit(forged)
+forged$intervention <- as.factor(forged$intervention)
+
+#standardize
+library(dplyr) #to use mutate
+forged <- forged %>% mutate_at(c('var1', 'var2', 'var3', 'var4', 'var5', 'var6', 'var7', 'var8', 'var9', 'var10', 'var11', 'var12', 'var13', 'var14'), ~(scale(.) %>% as.vector))
+summary(forged) #means all 0
+```
